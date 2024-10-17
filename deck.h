@@ -5,6 +5,8 @@
 #include <iostream>
 #include <algorithm>
 #include <random>
+#include <cstdlib>
+#include <ctime>
 
 class Deck {
 private:

@@ -9,6 +9,7 @@ void Deck::generateDeck() {
 }
 
 Deck::Deck(int numDecks) {
+    srand(static_cast<unsigned int>(time(0)));
     for (int i = 0; i < numDecks; i++) {
         generateDeck();
     }

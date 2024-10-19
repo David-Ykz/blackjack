@@ -12,12 +12,14 @@ class Deck {
 private:
     std::vector<int> cards;
     void generateDeck();
+    const int SHUFFLE_THRESHOLD = 10;
 
 public:
     Deck(int numDecks);
     int dealCard();
     void undealCard(int card);
     void viewDeck();
+    bool endOfDeck();
 };
 
 #endif

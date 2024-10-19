@@ -33,3 +33,7 @@ void Deck::viewDeck() {
     }
     std::cout << std::endl;
 }
+
+bool Deck::endOfDeck() {
+    return cards.size() < SHUFFLE_THRESHOLD;
+}

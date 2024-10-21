@@ -1,5 +1,6 @@
 #include <iostream>
 #include <stack>
+#include <chrono>
 #include "deck.h"
 
 int total(std::vector<int>& hand) {
@@ -15,7 +16,7 @@ int total(std::vector<int>& hand) {
 }
 
 double calculateDealerWinProbability(Deck& deck, std::vector<int>& playerCards, std::vector<int>& dealerCards) {
-    const double NUM_TRIALS = 10000;
+    const double NUM_TRIALS = 100000;
     const int playerTotal = total(playerCards);
     int numWins = 0;
     std::stack<int> dealtCards;
@@ -46,7 +47,7 @@ double calculateDealerWinProbability(Deck& deck, std::vector<int>& playerCards, 
 }
 
 double calculatePlayerBustProbability(Deck& deck, std::vector<int>& playerCards) {
-    const double NUM_TRIALS = 10000;
+    const double NUM_TRIALS = 100000;
     int numBusts = 0;
     for (int i = 0; i < NUM_TRIALS; i++) {
         // int dealerHiddenCard = deck.dealCard();
@@ -89,18 +90,16 @@ std::vector<std::vector<int>> dealCards(Deck& deck, int numPlayers) {
     return hands;
 }
 
-int main() {
-    // Treat ace as 1 when calculating bust probability and 11 when calculating dealer win probability
-
+void runMatch(int numDecks, int numPlayers) {
     const bool SHOW_DEBUG_INFO = false;
-    Deck deck = Deck(4);
-    int numPlayers = 2;
+    Deck deck = Deck(numDecks);
     int numRounds = 0;
     int* roundsWon = new int[numPlayers];
     int* roundsTied = new int[numPlayers];
     std::fill(roundsWon, roundsWon + numPlayers, 0);
     std::fill(roundsTied, roundsTied + numPlayers, 0);
 
+    auto start = std::chrono::high_resolution_clock::now();
     while (!deck.endOfDeck()) {
         numRounds++;
         if (SHOW_DEBUG_INFO) {            
@@ -152,10 +151,9 @@ int main() {
             }
         }
     }
-    
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << std::endl;
+    auto end = std::chrono::high_resolution_clock::now();
+     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+
     std::cout << "========== Match Summary ==========" << std::endl;
 
     for (int i = 0; i < numPlayers; i++) {
@@ -163,19 +161,16 @@ int main() {
         std::cout << " has won " << roundsWon[i] << "/" << numRounds << " rounds"; 
         std::cout << " and tied " << roundsTied[i] << "/" << numRounds << " rounds" << std::endl;
     }
+    std::cout << "Time taken: " << duration.count()/1000.0 << " seconds" << std::endl;
 
     delete roundsWon;
     delete roundsTied;
+}
 
-    // if total < 12, call hit; else, call stand and hit
-    // stand -- call dealer func ...
-    // hit -- generate random card
-    // if bust, return -1
-    // else, call hit and stand
-
-
-    // std::cout << "Hello World" << std::endl;
-
-
+int main() {
+    // Treat ace as 1 when calculating bust probability and 11 when calculating dealer win probability
+    for (int i = 0; i < 10; i++) {
+        runMatch(4, 2);
+    }
     return 0;
 }

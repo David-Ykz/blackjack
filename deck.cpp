@@ -18,7 +18,9 @@ Deck::Deck(int numDecks) {
 int Deck::dealCard() {
     int randomIndex = rand() % cards.size();
     int card = cards[randomIndex];
-    cards.erase(cards.begin() + randomIndex);
+    int lastCard = cards[cards.size() - 1];
+    cards[randomIndex] = lastCard;
+    cards.pop_back();
     return card;
 }
 
@@ -37,3 +39,4 @@ void Deck::viewDeck() {
 bool Deck::endOfDeck() {
     return cards.size() < SHUFFLE_THRESHOLD;
 }
+

@@ -15,11 +15,13 @@ int total(std::vector<int>& hand) {
 }
 
 double calculateDealerWinProbability(Deck& deck, std::vector<int>& playerCards, std::vector<int>& dealerCards) {
-    const double NUM_TRIALS = 100000;
+    const double NUM_TRIALS = 10000;
     const int playerTotal = total(playerCards);
     int numWins = 0;
     std::stack<int> dealtCards;
     for (int i = 0; i < NUM_TRIALS; i++) {
+        int dealerHiddenCard = deck.dealCard();
+        dealerCards.push_back(dealerHiddenCard);
         int dealerTotal = total(dealerCards);
         while (dealerTotal < 17) {
             int card = deck.dealCard();
@@ -37,19 +39,23 @@ double calculateDealerWinProbability(Deck& deck, std::vector<int>& playerCards, 
             deck.undealCard(dealtCards.top());
             dealtCards.pop();
         }
+        deck.undealCard(dealerHiddenCard);
+        dealerCards.pop_back();
     }
     return numWins/NUM_TRIALS;
 }
 
 double calculatePlayerBustProbability(Deck& deck, std::vector<int>& playerCards) {
-    const double NUM_TRIALS = 100000;
+    const double NUM_TRIALS = 10000;
     int numBusts = 0;
     for (int i = 0; i < NUM_TRIALS; i++) {
+        // int dealerHiddenCard = deck.dealCard();
         int card = deck.dealCard();
         playerCards.push_back(card);
         numBusts += total(playerCards) > 21 ? 1 : 0;
         playerCards.pop_back();
         deck.undealCard(card);
+        // deck.undealCard(dealerHiddenCard);
     }
     return numBusts/NUM_TRIALS;
 }
@@ -70,10 +76,7 @@ bool playerDecision(Deck& deck, std::vector<int>& playerCards, std::vector<int>&
 std::vector<std::vector<int>> dealCards(Deck& deck, int numPlayers) {
     std::vector<std::vector<int>> hands = {};
     std::vector<int> dealerCards = {};
-    for (int i = 0; i < 2; i++) {
-        int card = deck.dealCard();
-        dealerCards.push_back(card);
-    }
+    dealerCards.push_back(deck.dealCard());
     hands.push_back(dealerCards);
     for (int playerNum = 0; playerNum < numPlayers; playerNum++) {
         std::vector<int> playerCards = {};
@@ -130,6 +133,7 @@ int main() {
                 }
             }
         }
+        hands[0].push_back(deck.dealCard());
         while (total(hands[0]) < 17) {
             int card = deck.dealCard();
             if (SHOW_DEBUG_INFO) {            

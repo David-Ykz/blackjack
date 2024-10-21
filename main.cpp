@@ -2,21 +2,38 @@
 #include <stack>
 #include "deck.h"
 
-double calculateDealerWinProbability(Deck deck, int playerCards, int dealerCards) {
+int total(std::vector<int>& hand) {
+    int sum = 0;
+    bool containsAce = false;
+    for (int& card : hand) {
+        if (card == 1) {
+            containsAce = true;
+        }
+        sum += card;
+    }
+    return sum < 12 ? sum + 10 : sum;
+}
+
+double calculateDealerWinProbability(Deck& deck, std::vector<int>& playerCards, std::vector<int>& dealerCards) {
     const double NUM_TRIALS = 100000;
+    const int playerTotal = total(playerCards);
     int numWins = 0;
     std::stack<int> dealtCards;
     for (int i = 0; i < NUM_TRIALS; i++) {
-        while (dealerCards < 17) {
+        int dealerTotal = total(dealerCards);
+        while (dealerTotal < 17) {
             int card = deck.dealCard();
             dealtCards.push(card);
-            dealerCards += card;
+            dealerCards.push_back(card);
+            dealerTotal = total(dealerCards);
         }
-        if (dealerCards < 22 && dealerCards > playerCards) {
+        if (dealerTotal < 22 && dealerTotal > playerTotal) {
             numWins++;
         }
         while(!dealtCards.empty()) {
-            dealerCards -= dealtCards.top();
+            // std::cout << " " << dealerCards.size() << std::endl;
+            dealerCards.pop_back();
+
             deck.undealCard(dealtCards.top());
             dealtCards.pop();
         }
@@ -24,19 +41,21 @@ double calculateDealerWinProbability(Deck deck, int playerCards, int dealerCards
     return numWins/NUM_TRIALS;
 }
 
-double calculatePlayerBustProbability(Deck deck, int playerCards) {
+double calculatePlayerBustProbability(Deck& deck, std::vector<int>& playerCards) {
     const double NUM_TRIALS = 100000;
     int numBusts = 0;
     for (int i = 0; i < NUM_TRIALS; i++) {
         int card = deck.dealCard();
-        numBusts += playerCards + card > 21 ? 1 : 0;
+        playerCards.push_back(card);
+        numBusts += total(playerCards) > 21 ? 1 : 0;
+        playerCards.pop_back();
         deck.undealCard(card);
     }
     return numBusts/NUM_TRIALS;
 }
 
-bool playerDecision(Deck deck, int playerCards, int dealerCards) {
-    if (playerCards + 11 < 22) {
+bool playerDecision(Deck& deck, std::vector<int>& playerCards, std::vector<int>& dealerCards) {
+    if (total(playerCards) + 11 < 22) {
         return 1;
     }
     double dealerWinProbability = calculateDealerWinProbability(deck, playerCards, dealerCards);
@@ -48,19 +67,19 @@ bool playerDecision(Deck deck, int playerCards, int dealerCards) {
     return playerBustProbability < dealerWinProbability;
 }
 
-std::vector<int> dealCards(Deck deck, int numPlayers) {
-    std::vector<int> hands = {};
-    int dealerCards = 0;
+std::vector<std::vector<int>> dealCards(Deck& deck, int numPlayers) {
+    std::vector<std::vector<int>> hands = {};
+    std::vector<int> dealerCards = {};
     for (int i = 0; i < 2; i++) {
         int card = deck.dealCard();
-        dealerCards += card;
+        dealerCards.push_back(card);
     }
     hands.push_back(dealerCards);
     for (int playerNum = 0; playerNum < numPlayers; playerNum++) {
-        int playerCards = 0;
+        std::vector<int> playerCards = {};
         for (int i = 0; i < 2; i++) {
             int card = deck.dealCard();
-            playerCards += card;
+            playerCards.push_back(card);
         }
         hands.push_back(playerCards);
     }
@@ -68,6 +87,8 @@ std::vector<int> dealCards(Deck deck, int numPlayers) {
 }
 
 int main() {
+    // Treat ace as 1 when calculating bust probability and 11 when calculating dealer win probability
+
     const bool SHOW_DEBUG_INFO = false;
     Deck deck = Deck(4);
     int numPlayers = 2;
@@ -86,7 +107,7 @@ int main() {
             std::cout << "========== New round ==========" << std::endl;
         }
 
-        std::vector<int> hands = dealCards(deck, numPlayers);
+        std::vector<std::vector<int>> hands = dealCards(deck, numPlayers);
         for (int i = 1; i < hands.size(); i++) {
             if (SHOW_DEBUG_INFO) {            
                 std::cout << "----- Player " << i << " -----" << std::endl;
@@ -99,35 +120,32 @@ int main() {
                 }
                 if (hit) {
                     int card = deck.dealCard();
-                    if (SHOW_DEBUG_INFO) {            
+                    if (SHOW_DEBUG_INFO) {
                         std::cout << "Dealt card to player: " << card << std::endl;
                     }
-                    hands[i] += deck.dealCard();
+                    hands[i].push_back(card);
                 }
-                if (hands[i] > 21) {
+                if (total(hands[i]) > 21) {
                     hit = false;
                 }
             }
         }
-        while (hands[0] < 17) {
+        while (total(hands[0]) < 17) {
             int card = deck.dealCard();
             if (SHOW_DEBUG_INFO) {            
                 std::cout << "Dealt card to dealer: " << card << std::endl;
             }
-            hands[0] += card;
+            hands[0].push_back(card);
         }
 
         for (int i = 1; i < hands.size(); i++) {
-            if (hands[i] < 22) {
-                if (hands[0] > 21 || hands[i] > hands[0]) {
+            if (total(hands[i]) < 22) {
+                if (total(hands[0]) > 21 || total(hands[i]) > total(hands[0])) {
                     roundsWon[i - 1]++;
-                } else if (hands[i] == hands[0]) {
+                } else if (total(hands[i]) == total(hands[0])) {
                     roundsTied[i - 1]++;
                 }
             }
-        }
-        if (SHOW_DEBUG_INFO) {            
-            std::cout << "have won" << std::endl;
         }
     }
     

@@ -16,7 +16,7 @@ int total(std::vector<int>& hand) {
 }
 
 double calculateDealerWinProbability(Deck& deck, std::vector<int>& playerCards, std::vector<int>& dealerCards) {
-    const double NUM_TRIALS = 100000;
+    const double NUM_TRIALS = 10000;
     const int playerTotal = total(playerCards);
     int numWins = 0;
     std::stack<int> dealtCards;
@@ -46,8 +46,9 @@ double calculateDealerWinProbability(Deck& deck, std::vector<int>& playerCards, 
     return numWins/NUM_TRIALS;
 }
 
+// For A - 10, calculate which ones then for each bust multiply by # of that card then divide total by # of cards
 double calculatePlayerBustProbability(Deck& deck, std::vector<int>& playerCards) {
-    const double NUM_TRIALS = 100000;
+    const double NUM_TRIALS = 10000;
     int numBusts = 0;
     for (int i = 0; i < NUM_TRIALS; i++) {
         // int dealerHiddenCard = deck.dealCard();
@@ -62,9 +63,13 @@ double calculatePlayerBustProbability(Deck& deck, std::vector<int>& playerCards)
 }
 
 bool playerDecision(Deck& deck, std::vector<int>& playerCards, std::vector<int>& dealerCards) {
-    if (total(playerCards) + 11 < 22) {
+    if (total(playerCards) <= 10) {
         return 1;
     }
+    if (total(playerCards) >= 20) {
+        return 0;
+    }
+
     double dealerWinProbability = calculateDealerWinProbability(deck, playerCards, dealerCards);
     double playerBustProbability = calculatePlayerBustProbability(deck, playerCards);
 

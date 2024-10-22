@@ -5,6 +5,7 @@ void Deck::generateDeck() {
         for (int j = 0; j < 4; j++) {
             cards.push_back(std::min(i, 10));
         }
+        cardFrequencies[std::min(i, 10)] += 4;
     }
 }
 
@@ -21,11 +22,15 @@ int Deck::dealCard() {
     int lastCard = cards[cards.size() - 1];
     cards[randomIndex] = lastCard;
     cards.pop_back();
+
+    cardFrequencies[card]--;
+
     return card;
 }
 
 void Deck::undealCard(int card) {
     cards.push_back(card);
+    cardFrequencies[card]++;
 }
 
 void Deck::viewDeck() {
@@ -34,6 +39,21 @@ void Deck::viewDeck() {
         std::cout << card << " ";
     }
     std::cout << std::endl;
+}
+
+void Deck::viewCardFrequencies() {
+    for (int frequency : cardFrequencies) {
+        std::cout << frequency << " ";
+    }
+    std::cout << std::endl;
+}
+
+int Deck::getCardFrequency(int card) {
+    return cardFrequencies[card];
+}
+
+int Deck::size() {
+    return cards.size();
 }
 
 bool Deck::endOfDeck() {

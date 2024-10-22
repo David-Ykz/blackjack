@@ -11,6 +11,7 @@
 class Deck {
 private:
     std::vector<int> cards;
+    int cardFrequencies[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     void generateDeck();
     const int SHUFFLE_THRESHOLD = 10;
 
@@ -19,6 +20,9 @@ public:
     int dealCard();
     void undealCard(int card);
     void viewDeck();
+    void viewCardFrequencies();
+    int getCardFrequency(int card);
+    int size();
     bool endOfDeck();
 };
 

@@ -15,8 +15,13 @@ int total(std::vector<int>& hand) {
     return sum < 12 ? sum + 10 : sum;
 }
 
+
+
+// Variance:
+// 100 trials - 10%
+// 1000 trials - 2%
 double calculateDealerWinProbability(Deck& deck, std::vector<int>& playerCards, std::vector<int>& dealerCards) {
-    const double NUM_TRIALS = 10000;
+    const int NUM_TRIALS = 10000;
     const int playerTotal = total(playerCards);
     int numWins = 0;
     std::stack<int> dealtCards;
@@ -46,20 +51,19 @@ double calculateDealerWinProbability(Deck& deck, std::vector<int>& playerCards, 
     return numWins/NUM_TRIALS;
 }
 
-// For A - 10, calculate which ones then for each bust multiply by # of that card then divide total by # of cards
 double calculatePlayerBustProbability(Deck& deck, std::vector<int>& playerCards) {
-    const double NUM_TRIALS = 10000;
     int numBusts = 0;
-    for (int i = 0; i < NUM_TRIALS; i++) {
-        // int dealerHiddenCard = deck.dealCard();
-        int card = deck.dealCard();
+    for (int card = 10; card > 0; card--) {
         playerCards.push_back(card);
-        numBusts += total(playerCards) > 21 ? 1 : 0;
+        int playerTotal = total(playerCards);
         playerCards.pop_back();
-        deck.undealCard(card);
-        // deck.undealCard(dealerHiddenCard);
+        if (playerTotal > 21) {
+            numBusts += deck.getCardFrequency(card);
+        } else {
+            return numBusts/deck.size();
+        }
     }
-    return numBusts/NUM_TRIALS;
+    return numBusts/deck.size();
 }
 
 bool playerDecision(Deck& deck, std::vector<int>& playerCards, std::vector<int>& dealerCards) {

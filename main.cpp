@@ -2,6 +2,10 @@
 #include <stack>
 #include <chrono>
 #include "deck.h"
+#include <cstdlib>
+
+double* winnings = new double[2];
+
 
 int total(std::vector<int>& hand) {
     int sum = 0;
@@ -42,7 +46,10 @@ double calculateDealerWinProbability(Deck& deck, std::vector<int>& playerCards, 
     double numWins = 0;
     std::stack<int> dealtCards;
     for (int i = 0; i < NUM_TRIALS; i++) {
-        if (i == 999 && fabs(playerBust - numWins/i) > 0.05) {
+        if (i == 249 && fabs(playerBust - numWins/i) > 0.1) {
+            return numWins/i;
+        }
+        if (i == 999 && fabs(playerBust - numWins/i) > 0.04) {
             return numWins/i;
         }
         int dealerHiddenCard = deck.dealCard();
@@ -104,9 +111,10 @@ std::vector<std::vector<int>> dealCards(Deck& deck, int numPlayers) {
     return hands;
 }
 double roundWinProbability(Deck& deck, int numPlayers, int playerIndex) {
-    const int NUM_SIMULATIONS = 1000;
+    const double NUM_SIMULATIONS = 100.0;
     int roundsWon = 0;
     int roundsTied = 0;
+    int roundsLost = 0;
 
     for (int simulation = 0; simulation < NUM_SIMULATIONS; simulation++) {
         std::vector<std::vector<int>> hands = dealCards(deck, numPlayers);
@@ -133,6 +141,8 @@ double roundWinProbability(Deck& deck, int numPlayers, int playerIndex) {
                 roundsWon++;
             } else if (total(hands[playerIndex]) == total(hands[0])) {
                 roundsTied++;
+            } else {
+                roundsLost++;
             }
         }
 
@@ -142,18 +152,20 @@ double roundWinProbability(Deck& deck, int numPlayers, int playerIndex) {
             }
         }
     }
-    return (roundsWon + roundsTied)/NUM_SIMULATIONS;
+    return (roundsWon - roundsTied)/NUM_SIMULATIONS;
 }
 
 void runMatch(int numDecks, int numPlayers) {
     const bool SHOW_DEBUG_INFO = false;
-    const int playerIndex = 1;
+    const double BET_SCALING = 0.05;
+    const int MAX_BET = 1000;
+    const int playerIndex = 0;
     Deck deck = Deck(numDecks);
     int numRounds = 0;
     int* roundsWon = new int[numPlayers];
     int* roundsTied = new int[numPlayers];
-    int* bets = new int[numPlayers];
-    int* winnings = new int[numPlayers];
+    double* bets = new double[numPlayers];
+//    int* winnings = new int[numPlayers];
     std::fill(roundsWon, roundsWon + numPlayers, 0);
     std::fill(roundsTied, roundsTied + numPlayers, 0);
     std::fill(bets, bets + numPlayers, 100);
@@ -168,7 +180,7 @@ void runMatch(int numDecks, int numPlayers) {
             std::cout << std::endl;
             std::cout << "========== New round ==========" << std::endl;
         }
-        bets[playerIndex] = 100 + 90 * roundWinProbability(deck, numPlayers, playerIndex);
+        bets[playerIndex] = std::min(MAX_BET * 1.0, 100 + MAX_BET * std::max(0.0, roundWinProbability(deck, numPlayers, playerIndex)));
         std::vector<std::vector<int>> hands = dealCards(deck, numPlayers);
         for (int i = 1; i < hands.size(); i++) {
             if (SHOW_DEBUG_INFO) {            
@@ -235,5 +247,9 @@ int main() {
     for (int i = 0; i < 10; i++) {
         runMatch(4, 2);
     }
+
+
+    std::cout << "---" << std::endl;
+    std::cout << winnings[0] << " - " << winnings[1] << std::endl;
     return 0;
 }

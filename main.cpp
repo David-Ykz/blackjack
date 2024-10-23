@@ -12,7 +12,22 @@ int total(std::vector<int>& hand) {
         }
         sum += card;
     }
-    return sum < 12 ? sum + 10 : sum;
+    return (containsAce && sum < 12) ? sum + 10 : sum;
+}
+
+double calculatePlayerBustProbability(Deck& deck, std::vector<int>& playerCards) {
+    double numBusts = 0.0;
+    for (int card = 10; card > 0; card--) {
+        playerCards.push_back(card);
+        int playerTotal = total(playerCards);
+        playerCards.pop_back();
+        if (playerTotal > 21) {
+            numBusts += deck.getCardFrequency(card);
+        } else {
+            return numBusts/deck.size();
+        }
+    }
+    return numBusts/deck.size();
 }
 
 
@@ -21,11 +36,15 @@ int total(std::vector<int>& hand) {
 // 100 trials - 10%
 // 1000 trials - 2%
 double calculateDealerWinProbability(Deck& deck, std::vector<int>& playerCards, std::vector<int>& dealerCards) {
-    const int NUM_TRIALS = 10000;
+    const double NUM_TRIALS = 5000;
     const int playerTotal = total(playerCards);
-    int numWins = 0;
+    const double playerBust = calculatePlayerBustProbability(deck, playerCards);
+    double numWins = 0;
     std::stack<int> dealtCards;
     for (int i = 0; i < NUM_TRIALS; i++) {
+        if (i == 999 && fabs(playerBust - numWins/i) > 0.05) {
+            return numWins/i;
+        }
         int dealerHiddenCard = deck.dealCard();
         dealerCards.push_back(dealerHiddenCard);
         int dealerTotal = total(dealerCards);
@@ -39,7 +58,6 @@ double calculateDealerWinProbability(Deck& deck, std::vector<int>& playerCards, 
             numWins++;
         }
         while(!dealtCards.empty()) {
-            // std::cout << " " << dealerCards.size() << std::endl;
             dealerCards.pop_back();
 
             deck.undealCard(dealtCards.top());
@@ -49,21 +67,6 @@ double calculateDealerWinProbability(Deck& deck, std::vector<int>& playerCards, 
         dealerCards.pop_back();
     }
     return numWins/NUM_TRIALS;
-}
-
-double calculatePlayerBustProbability(Deck& deck, std::vector<int>& playerCards) {
-    int numBusts = 0;
-    for (int card = 10; card > 0; card--) {
-        playerCards.push_back(card);
-        int playerTotal = total(playerCards);
-        playerCards.pop_back();
-        if (playerTotal > 21) {
-            numBusts += deck.getCardFrequency(card);
-        } else {
-            return numBusts/deck.size();
-        }
-    }
-    return numBusts/deck.size();
 }
 
 bool playerDecision(Deck& deck, std::vector<int>& playerCards, std::vector<int>& dealerCards) {
@@ -83,6 +86,8 @@ bool playerDecision(Deck& deck, std::vector<int>& playerCards, std::vector<int>&
     return playerBustProbability < dealerWinProbability;
 }
 
+
+
 std::vector<std::vector<int>> dealCards(Deck& deck, int numPlayers) {
     std::vector<std::vector<int>> hands = {};
     std::vector<int> dealerCards = {};
@@ -98,15 +103,61 @@ std::vector<std::vector<int>> dealCards(Deck& deck, int numPlayers) {
     }
     return hands;
 }
+double roundWinProbability(Deck& deck, int numPlayers, int playerIndex) {
+    const int NUM_SIMULATIONS = 1000;
+    int roundsWon = 0;
+    int roundsTied = 0;
+
+    for (int simulation = 0; simulation < NUM_SIMULATIONS; simulation++) {
+        std::vector<std::vector<int>> hands = dealCards(deck, numPlayers);
+        for (int i = 1; i < hands.size(); i++) {
+            bool hit = true;
+            while (hit) {
+                hit = playerDecision(deck, hands[i], hands[0]);
+                if (hit) {
+                    int card = deck.dealCard();
+                    hands[i].push_back(card);
+                }
+                if (total(hands[i]) > 21) {
+                    hit = false;
+                }
+            }
+        }
+        hands[0].push_back(deck.dealCard());
+        while (total(hands[0]) < 17) {
+            int card = deck.dealCard();
+            hands[0].push_back(card);
+        }
+        if (total(hands[playerIndex]) < 22) {
+            if (total(hands[0]) > 21 || total(hands[playerIndex]) > total(hands[0])) {
+                roundsWon++;
+            } else if (total(hands[playerIndex]) == total(hands[0])) {
+                roundsTied++;
+            }
+        }
+
+        for (std::vector<int> hand : hands) {
+            for (int card : hand) {
+                deck.undealCard(card);
+            }
+        }
+    }
+    return (roundsWon + roundsTied)/NUM_SIMULATIONS;
+}
 
 void runMatch(int numDecks, int numPlayers) {
     const bool SHOW_DEBUG_INFO = false;
+    const int playerIndex = 1;
     Deck deck = Deck(numDecks);
     int numRounds = 0;
     int* roundsWon = new int[numPlayers];
     int* roundsTied = new int[numPlayers];
+    int* bets = new int[numPlayers];
+    int* winnings = new int[numPlayers];
     std::fill(roundsWon, roundsWon + numPlayers, 0);
     std::fill(roundsTied, roundsTied + numPlayers, 0);
+    std::fill(bets, bets + numPlayers, 100);
+    std::fill(winnings, winnings + numPlayers, 0);
 
     auto start = std::chrono::high_resolution_clock::now();
     while (!deck.endOfDeck()) {
@@ -117,7 +168,7 @@ void runMatch(int numDecks, int numPlayers) {
             std::cout << std::endl;
             std::cout << "========== New round ==========" << std::endl;
         }
-
+        bets[playerIndex] = 100 + 90 * roundWinProbability(deck, numPlayers, playerIndex);
         std::vector<std::vector<int>> hands = dealCards(deck, numPlayers);
         for (int i = 1; i < hands.size(); i++) {
             if (SHOW_DEBUG_INFO) {            
@@ -154,21 +205,25 @@ void runMatch(int numDecks, int numPlayers) {
             if (total(hands[i]) < 22) {
                 if (total(hands[0]) > 21 || total(hands[i]) > total(hands[0])) {
                     roundsWon[i - 1]++;
+                    winnings[i - 1] += bets[i - 1];
                 } else if (total(hands[i]) == total(hands[0])) {
                     roundsTied[i - 1]++;
+                } else {
+                    winnings[i - 1] -= bets[i - 1];
                 }
             }
         }
     }
     auto end = std::chrono::high_resolution_clock::now();
-     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
     std::cout << "========== Match Summary ==========" << std::endl;
 
     for (int i = 0; i < numPlayers; i++) {
         std::cout << "Player " << i + 1;
         std::cout << " has won " << roundsWon[i] << "/" << numRounds << " rounds"; 
-        std::cout << " and tied " << roundsTied[i] << "/" << numRounds << " rounds" << std::endl;
+        std::cout << " and tied " << roundsTied[i] << "/" << numRounds << " rounds";
+        std::cout << ", winning " << winnings[i] << std::endl;
     }
     std::cout << "Time taken: " << duration.count()/1000.0 << " seconds" << std::endl;
 
@@ -177,7 +232,6 @@ void runMatch(int numDecks, int numPlayers) {
 }
 
 int main() {
-    // Treat ace as 1 when calculating bust probability and 11 when calculating dealer win probability
     for (int i = 0; i < 10; i++) {
         runMatch(4, 2);
     }

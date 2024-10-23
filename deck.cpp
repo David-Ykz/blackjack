@@ -10,7 +10,9 @@ void Deck::generateDeck() {
 }
 
 Deck::Deck(int numDecks) {
-    srand(static_cast<unsigned int>(time(0)));
+    auto now = std::chrono::high_resolution_clock::now();
+    auto duration = now.time_since_epoch();
+    srand(static_cast<unsigned int>(duration.count()));
     for (int i = 0; i < numDecks; i++) {
         generateDeck();
     }

@@ -14,7 +14,7 @@ private:
     std::vector<int> cards;
     int cardFrequencies[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     void generateDeck();
-    const int SHUFFLE_THRESHOLD = 10;
+    const int SHUFFLE_THRESHOLD = 20;
 
 public:
     Deck(int numDecks);
@@ -25,6 +25,13 @@ public:
     int getCardFrequency(int card);
     int size();
     bool endOfDeck();
+
+    int total(std::vector<int>& hand);
+    bool softHand(std::vector<int>& hand);
+    double bustProbability(std::vector<int>& hand);
+    double dealerWinProbability(std::vector<int>& dealerHand, std::vector<int>& playerHand);
+    std::vector<std::vector<int>> dealHands(int numHands);
+    int compareHands(std::vector<int>& dealerHand, std::vector<int>& playerHand);
 };
 
 #endif

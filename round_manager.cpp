@@ -81,7 +81,7 @@ RoundManager::RoundManager() {
 int RoundManager::initializeRound(std::vector<int> dealerHand, std::vector<int> playerHand) {
     dealerCards.clear();
     playerCards.clear();
-    int cardCount = countCards();
+    double winProbability = roundWinProbability();
     for (int card : dealerHand) {
         dealerCards.push_back(deck->dealCard(card));
     }
@@ -89,7 +89,7 @@ int RoundManager::initializeRound(std::vector<int> dealerHand, std::vector<int> 
         playerCards.push_back(deck->dealCard(card));
     }
     deck->viewDeck();
-    return 20 * cardCount;
+    return (int)(20 * winProbability);
 }
 
 bool RoundManager::dealCard(int card, bool playerTurn) {

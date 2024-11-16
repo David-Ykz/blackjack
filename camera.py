@@ -24,7 +24,6 @@ roundManager = round_manager.RoundManager()
 
 while True:
     ret, frame = cap.read()
-#    frame = frame[:, :frame.shape[1] // 2]
     cv2.imshow("Video Capture", frame)
 
     key = cv2.waitKey(1) & 0xFF
@@ -80,16 +79,6 @@ while True:
         print(dealerCards)
         print(playerCards)
         print("")
-
-#             if prediction['y'] > 320:
-#                 print("Lower")
-#                 print(prediction["class"])
-# #                dealerCards.append(prediction["class"])
-#             else:
-#                 print("Upper")
-#                 print(prediction["class"])
-
-        
 
     elif key == ord('x'):
         break

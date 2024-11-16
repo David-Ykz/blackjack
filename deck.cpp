@@ -35,6 +35,20 @@ int Deck::dealCard() {
     return card;
 }
 
+int Deck::dealCard(int card) {
+    if (cards.size() == 0) {
+        std::cout << "no cards left" << std::endl;
+    }
+    auto it = std::find(cards.begin(), cards.end(), card);
+    int lastCard = cards[cards.size() - 1];
+    cards[std::distance(cards.begin(), it)] = lastCard;
+    cards.pop_back();
+
+    cardFrequencies[card - 1]--;
+
+    return card;
+}
+
 void Deck::undealCard(int card) {
     cards.push_back(card);
     cardFrequencies[card - 1]++;

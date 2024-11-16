@@ -19,6 +19,7 @@ private:
 public:
     Deck(int numDecks);
     int dealCard();
+    int dealCard(int card);
     void undealCard(int card);
     void viewDeck();
     void viewCardFrequencies();
